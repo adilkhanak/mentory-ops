@@ -1,0 +1,3 @@
+"use client";
+import { useState } from "react"; import { toast } from "sonner"; import { Button } from "@/components/ui/button";
+export function MailSync({configured}:{configured:boolean}){const [busy,setBusy]=useState(false);async function sync(){setBusy(true);try{const r=await fetch("/api/mail/sync",{method:"POST"});const json=await r.json() as Record<string,any>;if(!r.ok)throw new Error(json.error||"Ошибка");toast.success(`Проверено: ${json.scanned??0}, новых: ${json.inserted??0}`);window.location.reload()}catch(error){toast.error(error instanceof Error?error.message:"Ошибка")}finally{setBusy(false)}}return <Button onClick={sync} disabled={!configured||busy}>{busy?"Синхронизируем…":"Синхронизировать сейчас"}</Button>}

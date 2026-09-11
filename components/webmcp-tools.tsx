@@ -1,0 +1,11 @@
+"use client";
+import { useEffect } from "react";
+
+declare global {
+  interface Document { modelContext?: { registerTool(tool: Record<string, unknown>, options?: {signal?:AbortSignal}): void|Promise<void> } }
+}
+
+export function WebMcpTools(){useEffect(()=>{const context=document.modelContext;if(!context?.registerTool)return;const lifecycle=new AbortController();const report=(error:unknown)=>console.error("WebMCP",error);try{
+  void Promise.resolve(context.registerTool({name:"open_candidate_register",title:"Открыть реестр кандидатов",description:"Открывает реестр Mentory с поиском по ФИО, email или ИИН.",inputSchema:{type:"object",properties:{search:{type:"string"}},additionalProperties:false},annotations:{readOnlyHint:true,untrustedContentHint:false},execute(input:unknown){const search=typeof input==="object"&&input&&"search" in input?String((input as {search?:unknown}).search??""):"";window.location.assign(`/applications${search?`?q=${encodeURIComponent(search)}`:""}`);return{opened:true,search}}},{signal:lifecycle.signal})).catch(report);
+  void Promise.resolve(context.registerTool({name:"update_candidate_decision",title:"Обновить решение по кандидату",description:"Сохраняет финальное решение ACCEPTED или REJECTED для конкретной заявки.",inputSchema:{type:"object",properties:{applicationId:{type:"string",minLength:1},decision:{type:"string",enum:["ACCEPTED","REJECTED"]}},required:["applicationId","decision"],additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},async execute(input:unknown){const value=input as {applicationId?:unknown;decision?:unknown};if(typeof value?.applicationId!=="string"||!["ACCEPTED","REJECTED"].includes(String(value.decision)))throw new Error("Invalid candidate decision");const r=await fetch(`/api/applications/${encodeURIComponent(value.applicationId)}`,{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({finalDecision:value.decision})});if(!r.ok)throw new Error(`Update failed: ${r.status}`);return{applicationId:value.applicationId,decision:value.decision,updated:true}}},{signal:lifecycle.signal})).catch(report);
+}catch(error){report(error)}return()=>lifecycle.abort()},[]);return null}

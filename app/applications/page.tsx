@@ -1,0 +1,10 @@
+import { AppShell } from "@/components/app-shell";
+import { ApplicationTable } from "@/components/application-table";
+import { NewCandidateForm } from "@/components/new-candidate-form";
+import { getActor, listApplications } from "@/lib/server";
+
+export const dynamic = "force-dynamic";
+export default async function ApplicationsPage({ searchParams }: { searchParams: Promise<Record<string,string|undefined>> }) {
+  const params=await searchParams; const actor=await getActor("/applications"); const rows=await listApplications(params.q??"",params.course??"",params.status??"");
+  return <AppShell actor={actor}><div className="space-y-5"><div className="flex items-end justify-between gap-4"><div><p className="text-sm font-semibold text-blue-700">Единый реестр</p><h1 className="mt-1 text-3xl font-bold tracking-tight">Кандидаты</h1></div><a href="/api/export" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50">Экспорт CSV</a></div>{["ADMIN","MANAGER"].includes(actor.role)&&<NewCandidateForm/>}<form className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[1fr_230px_180px_auto]"><input name="q" defaultValue={params.q} placeholder="ФИО, email или ИИН" className="h-10 rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-500"/><select name="course" defaultValue={params.course} className="h-10 rounded-xl border border-slate-200 px-3 text-sm"><option value="">Все курсы</option><option value="junior-frontend">Junior Frontend</option><option value="middle-frontend">Middle Frontend</option></select><select name="status" defaultValue={params.status} className="h-10 rounded-xl border border-slate-200 px-3 text-sm"><option value="">Все статусы</option><option value="NEW">Новые</option><option value="IN_REVIEW">На рассмотрении</option><option value="APPROVED">Приняты</option><option value="REJECTED">Отказ</option></select><button className="h-10 rounded-xl bg-[#172554] px-4 text-sm font-semibold text-white">Найти</button></form><ApplicationTable rows={rows as Array<Record<string, any>>}/></div></AppShell>;
+}
