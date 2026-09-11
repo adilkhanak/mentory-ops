@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { CYCLE_ID } from "@/lib/domain";
 import { database as postgresDatabase } from "@/lib/database";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { cookies } from "next/headers";
+import { SESSION_COOKIE, simpleAuthEnabled, verifySessionToken } from "@/lib/simple-auth";
 
 export type Actor = { id: string; email: string; name: string; role: "ADMIN" | "MANAGER" | "TEACHER" | "VIEWER" };
 
@@ -25,6 +27,14 @@ export async function ensureBootstrap() {
 export async function getActor(path = "/"): Promise<Actor> {
   await ensureBootstrap();
   const database = db();
+
+  if (simpleAuthEnabled()) {
+    const authenticated = await verifySessionToken((await cookies()).get(SESSION_COOKIE)?.value);
+    if (!authenticated) redirect(`/login?next=${encodeURIComponent(path.startsWith("/") ? path : "/")}`);
+    const admin = await database.prepare("SELECT id,email,name,role FROM users WHERE role='ADMIN' ORDER BY created_at LIMIT 1").first<Actor>();
+    if (!admin) throw new Error("Simple auth requires at least one ADMIN user");
+    return admin;
+  }
 
   if (process.env.OPEN_ACCESS === "true") {
     const admin = await database
@@ -68,13 +78,17 @@ export async function dashboard() {
   return { cycle, courses: courses.results, totals, regions, queues, recent: recent.results as Array<Record<string, string>> };
 }
 
-export async function listApplications(search = "", course = "", status = "") {
+export async function listApplications(search = "", course = "", status = "", cv = "", motivation = "", interview = "", decision = "") {
   await ensureBootstrap();
   const terms: string[] = ["a.cycle_id=?"];
   const args: unknown[] = [CYCLE_ID];
   if (search) { terms.push("(lower(p.full_name) LIKE ? OR lower(p.email) LIKE ? OR p.iin LIKE ?)"); const q=`%${search.toLowerCase()}%`; args.push(q,q,q); }
   if (course) { terms.push("a.course_id=?"); args.push(course); }
   if (status) { terms.push("a.status=?"); args.push(status); }
+  if (cv) { terms.push("a.cv_status=?"); args.push(cv); }
+  if (motivation) { terms.push("a.motivation_status=?"); args.push(motivation); }
+  if (interview) { terms.push("a.interview_status=?"); args.push(interview); }
+  if (decision) { terms.push("a.final_decision=?"); args.push(decision); }
   const sql = `SELECT a.*,p.full_name,p.email,p.phone,p.iin,p.birth_date,p.city,p.region,p.education,p.employment_status,p.it_experience,p.regional,c.name AS course_name FROM applications a JOIN people p ON p.id=a.person_id JOIN courses c ON c.id=a.course_id WHERE ${terms.join(" AND ")} ORDER BY a.updated_at DESC LIMIT 500`;
   return (await db().prepare(sql).bind(...args).all()).results;
 }

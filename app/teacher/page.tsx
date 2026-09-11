@@ -30,8 +30,8 @@ export default async function TeacherPage({searchParams}:{searchParams:Promise<R
         </section>
         <CvDecisionPanel id={selected.id} currentStatus={selected.cv_status}/>
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-slate-200 p-4"><div><h2 className="font-bold">Резюме кандидата</h2><p className="text-xs text-slate-500">PDF отображается прямо в системе</p></div>{selected.cv_url&&<a href={selected.cv_url} target="_blank" rel="noreferrer" className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold hover:bg-slate-50">Открыть отдельно</a>}</div>
-          {selected.cv_url?<iframe title={`CV — ${selected.full_name}`} src={selected.cv_url} className="h-[720px] w-full bg-slate-100"/>:<div className="grid h-72 place-items-center text-sm text-slate-500">Ссылка на CV отсутствует</div>}
+          <div className="flex flex-col justify-between gap-3 border-b border-slate-200 p-4 sm:flex-row sm:items-center"><div><h2 className="font-bold">Резюме кандидата</h2><p className="text-xs text-slate-500">Карточка выбирает кандидата; файл открывается внутри системы</p></div>{selected.cv_url&&<a href={selected.cv_url} target="_blank" rel="noreferrer" className="rounded-xl border border-slate-200 px-3 py-2 text-center text-sm font-semibold hover:bg-slate-50">Скачать оригинал</a>}</div>
+          {selected.cv_url?<iframe title={`CV — ${selected.full_name}`} src={`/api/cv/${selected.id}`} className="h-[720px] w-full bg-slate-100"/>:<div className="grid h-72 place-items-center text-sm text-slate-500">Ссылка на CV отсутствует</div>}
         </section>
       </div>
     </div>:<div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center"><p className="font-semibold">Очередь пуста</p><p className="mt-1 text-sm text-slate-500">По выбранным условиям кандидатов нет.</p></div>}

@@ -7,11 +7,12 @@ const items = [
   ["/teacher", "Проверка CV", GraduationCap],
   ["/import", "Импорт", FileUp],
   ["/mail", "Почта", Mail],
-  ["/selection", "Набор", ClipboardList],
+  ["/selection", "Отбор", ClipboardList],
   ["/settings", "Настройки", Settings],
 ] as const;
 
 export function AppShell({ actor, children }: { actor: Actor; children: React.ReactNode }) {
+  const openAccess = process.env.OPEN_ACCESS === "true" && process.env.SIMPLE_AUTH !== "true";
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
@@ -20,7 +21,7 @@ export function AppShell({ actor, children }: { actor: Actor; children: React.Re
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#172554] text-sm font-black text-white">M</span>
             <span><strong className="block text-[15px] leading-none">Mentory Ops</strong><small className="mt-1 block text-xs text-slate-500">Tech Orda 2026</small></span>
           </a>
-          <div className="flex min-w-0 items-center gap-3 text-right"><div><p className="truncate text-sm font-semibold">{actor.name}</p><p className="text-xs text-slate-500">{actor.role}</p></div><form action="/auth/signout" method="post"><button className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50">Выйти</button></form></div>
+          <div className="flex min-w-0 items-center gap-3 text-right"><div><p className="truncate text-sm font-semibold">{actor.name}</p><p className="text-xs text-slate-500">{openAccess ? "Открытый тестовый режим" : actor.role}</p></div>{!openAccess&&<form action="/auth/signout" method="post"><button className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50">Выйти</button></form>}</div>
         </div>
       </header>
       <div className="mx-auto grid max-w-[1500px] grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)]">
