@@ -23,14 +23,23 @@ export async function ensureBootstrap() {
 }
 
 export async function getActor(path = "/"): Promise<Actor> {
+  await ensureBootstrap();
+  const database = db();
+
+  if (process.env.OPEN_ACCESS === "true") {
+    const admin = await database
+      .prepare("SELECT id,email,name,role FROM users WHERE role='ADMIN' ORDER BY created_at LIMIT 1")
+      .first<Actor>();
+    if (!admin) throw new Error("OPEN_ACCESS requires at least one ADMIN user");
+    return admin;
+  }
+
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user?.email) redirect(`/login?next=${encodeURIComponent(path.startsWith("/") ? path : "/")}`);
   const userId = user.id;
   const email = user.email.toLowerCase();
   const displayName = String(user.user_metadata?.full_name ?? user.email);
-  await ensureBootstrap();
-  const database = db();
   let row = await database.prepare("SELECT id,email,name,role FROM users WHERE id = ?").bind(userId).first<Actor>();
   if (!row) {
     const invited = await database.prepare("SELECT id,role FROM users WHERE lower(email)=lower(?)").bind(email).first<{ id: string; role: Actor["role"] }>();
